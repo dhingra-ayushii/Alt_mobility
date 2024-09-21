@@ -22,5 +22,5 @@ public class AlertThreshold {
     private AlertType alertType;
     private String alertName;
     private List<Threshold> thresholds;
-    private String siverity;
+    private String severity;
 }

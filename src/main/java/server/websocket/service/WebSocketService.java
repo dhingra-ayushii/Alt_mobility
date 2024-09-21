@@ -24,10 +24,10 @@ public class WebSocketService {
 	
 	@Scheduled(fixedRate = 5000)
 	public void sendAvgResponseTime() {
-		String notificationMessage = "Backend push notification at " + System.currentTimeMillis();
+		String notificationMessage = "Backend push notification at 1" + System.currentTimeMillis();
 		// alert.setContent(notificationMessage);
 		// alert.setSender("CHAT");
-		// Send the notification to /topic/notifications
+	   //Send the notification to /topic/notifications
 
 		messagingTemplate.convertAndSend("/topic/avgResponseTime",notificationMessage );
 

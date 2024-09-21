@@ -4,9 +4,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Controller;
+import server.alert.service.AlertService;
 
 @Controller
 public class WebSocketService {
+    @Autowired
+    private AlertService alertService;
+
 	@Autowired
 	private SimpMessagingTemplate messagingTemplate;
 	
@@ -16,8 +20,9 @@ public class WebSocketService {
 		// alert.setContent(notificationMessage);
 		// alert.setSender("CHAT");
 		// Send the notification to /topic/notifications
+        ;
 
-		messagingTemplate.convertAndSend("/topic/alert",notificationMessage );
+		messagingTemplate.convertAndSend("/topic/alert",alertService.getAllAlert() );
 
 		System.out.println("Sent notification: ScheduledNotification" + notificationMessage);
 	}
@@ -29,7 +34,7 @@ public class WebSocketService {
 		// alert.setSender("CHAT");
 	   //Send the notification to /topic/notifications
 
-		messagingTemplate.convertAndSend("/topic/avgResponseTime",notificationMessage );
+		messagingTemplate.convertAndSend("/topic/avgResponseTime",alertService.getCriticalAlertPercentageByAlertType() );
 
 		System.out.println("Sent notification:AvgResponseTime " + notificationMessage);
 	}

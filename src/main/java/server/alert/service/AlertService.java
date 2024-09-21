@@ -4,8 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Service;
@@ -23,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 
@@ -83,45 +83,39 @@ public class AlertService {
     }
 
     public Map<String, Double> getCriticalAlertPercentageByAlertType() {
-        // Define the aggregation pipeline
-        Aggregation aggregation = newAggregation(
-                group("alertType")
-                        .count().as("total")
-                        .sum(conditional(Criteria.where("severity").is("Critical"), 1, 0)).as("criticalCount"),
-                project("_id")
-                        .and("total").as("total")
-                        .and("criticalCount").as("criticalCount")
-                        .andExpression("criticalCount / total * 100").as("percentage")
+        // Step 1: Match only alerts with severity "Critical"
+        AggregationOperation matchCritical = match(Criteria.where("severity").is("Critical"));
+
+        // Step 2: Group by alertType and count the total occurrences per alertType
+        AggregationOperation groupByAlertType = group("alertType")
+                .count().as("totalCriticalAlerts");
+
+        // Step 3: Calculate the percentage of each alertType
+        AggregationOperation projectPercentage = project()
+                .and(ConditionalOperators.Cond
+                        .when(ComparisonOperators.Gt.valueOf("totalCriticalAlerts").greaterThanValue(0))
+                        .thenValueOf("totalCriticalAlerts")
+                        .otherwise(0)
+                ).as("percentage");
+
+        // Build the aggregation pipeline
+        Aggregation aggregation = Aggregation.newAggregation(
+                matchCritical,
+                groupByAlertType,
+                projectPercentage
         );
 
-        // Execute the aggregation
-        AggregationResults<AlertPercentage> results = mongoTemplate.aggregate(aggregation, "alert", AlertPercentage.class);
+        // Execute the aggregation and map the results
+        AggregationResults<Map> result = mongoTemplate.aggregate(aggregation, "alert", Map.class);
 
-        // Prepare the result map with default values
-        Map<String, Double> result = new HashMap<>();
-
-        // Populate the map with the results
-        for (AlertPercentage alertPercentage : results.getMappedResults()) {
-            result.put(alertPercentage.getAlertType(), alertPercentage.getPercentage());
-        }
-
-        // Ensure all enum values are included, even if no data
-        for (AlertType type : AlertType.values()) {
-            result.putIfAbsent(type.name(), 0.0);
-        }
-
-        return result;
+        // Convert the result to a Map<String, Double> with alertType as key and percentage as value
+        return result.getMappedResults().stream()
+                .collect(Collectors.toMap(
+                        entry -> entry.get("_id").toString(),
+                        entry -> Double.valueOf(entry.get("percentage").toString())
+                ));
     }
-
-
-    public List<Alert> getAllAlert(Integer pageSize, Integer pageNumber) {
-        // Create Pageable object with pageNumber and pageSize
-        Pageable pageable = PageRequest.of(pageNumber, pageSize);
-
-        // Create the MongoDB query and apply pagination
-        Query query = new Query().with(pageable);
-
-        // Fetch the list of alerts using MongoTemplate with pagination
-        return (List<Alert>) mongoTemplate.find(query, Alert.class);
+    public List<Alert> getAllAlert() {
+        return alertRepository.findAll();
     }
 }

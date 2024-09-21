@@ -38,6 +38,9 @@ public class AlertService {
                 if( alertThreshold.getAlertType().equals(AlertType.LowCharge)){
                     generateLowChargeAlert(alertThreshold, vehicleData);
                 }
+                else{
+                    generateAlert(alertThreshold, vehicleData);
+                }
 
             }
         });
@@ -53,6 +56,16 @@ public class AlertService {
                 alertThreshold.getAlertType().toString(), vehicleData.getVehicleId(), "Low Battery",
                 vehicleData.getBatteryPercentage().toString(), "Unresolved", LocalDateTime.now(),
                 LocalDateTime.now(),lowChargeFields , vehicleData.getLatitude(), vehicleData.getLatitudeDirection(),
+                vehicleData.getLongitude(), vehicleData.getLatitudeDirection(), alertThreshold.getSeverity(),
+                null, LocalDateTime.now(), null, alertThreshold.getId());
+        alertRepository.save(alert);
+    }
+
+    private void generateAlert(AlertThreshold alertThreshold, VehicleData vehicleData) {
+        Alert alert = new Alert(UUID.randomUUID().toString(),
+                alertThreshold.getAlertType().toString(), vehicleData.getVehicleId(), "Low Battery",
+                vehicleData.getBatteryPercentage().toString(), "Unresolved", LocalDateTime.now(),
+                LocalDateTime.now(),null , vehicleData.getLatitude(), vehicleData.getLatitudeDirection(),
                 vehicleData.getLongitude(), vehicleData.getLatitudeDirection(), alertThreshold.getSeverity(),
                 null, LocalDateTime.now(), null, alertThreshold.getId());
         alertRepository.save(alert);

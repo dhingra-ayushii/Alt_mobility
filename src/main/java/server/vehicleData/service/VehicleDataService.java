@@ -11,6 +11,7 @@ public class VehicleDataService {
     @Autowired
     private VehicleDataRepository vehicleDataRepository;
 
+
     public void report(VehicleDataRequest req) {
 
         vehicleDataRepository.save(new VehicleData(req));

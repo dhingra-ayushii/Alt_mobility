@@ -22,11 +22,11 @@ public class UserResponse {
     private Role role;
 
     public UserResponse(FleetUser user) {
-        this.createdAt = user.getCreatedAt();
-        this.updatedAt = user.getUpdatedAt();
-        this.id = user.getId();
-        this.name = user.getName();
-        this.email = user.getEmail();
-        this.role = user.getRole();
+//        this.createdAt = user.getCreatedAt();
+//        this.updatedAt = user.getUpdatedAt();
+//        this.id = user.getId();
+//        this.name = user.getName();
+//        this.email = user.getEmail();
+//        this.role = user.getRole();
     }
 }

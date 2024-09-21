@@ -1,9 +1,13 @@
 package server.alert.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Service;
 import server.alert.model.*;
 import server.alert.repository.AlertRepository;
@@ -29,6 +33,9 @@ public class AlertService {
 
     @Autowired
     private AlertRepository alertRepository;
+
+    @Autowired
+    private MongoTemplate mongoTemplate;
 
     @Autowired
     private VehicleDataService vehicleDataService;
@@ -104,5 +111,17 @@ public class AlertService {
         }
 
         return result;
+    }
+
+
+    public List<Alert> getAllAlert(Integer pageSize, Integer pageNumber) {
+        // Create Pageable object with pageNumber and pageSize
+        Pageable pageable = PageRequest.of(pageNumber, pageSize);
+
+        // Create the MongoDB query and apply pagination
+        Query query = new Query().with(pageable);
+
+        // Fetch the list of alerts using MongoTemplate with pagination
+        return (List<Alert>) mongoTemplate.find(query, Alert.class);
     }
 }

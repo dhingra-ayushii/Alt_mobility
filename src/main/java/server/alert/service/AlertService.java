@@ -1,11 +1,11 @@
 package server.alert.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
-import server.alert.model.AdditionalFields;
-import server.alert.model.Alert;
-import server.alert.model.AlertType;
-import server.alert.model.LowChargeFields;
+import server.alert.model.*;
 import server.alert.repository.AlertRepository;
 import server.threshold.model.AlertThreshold;
 import server.threshold.service.ThresholdService;
@@ -15,8 +15,12 @@ import server.vehicleData.service.VehicleDataService;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 
 @Service
 public class AlertService {
@@ -69,5 +73,36 @@ public class AlertService {
                 vehicleData.getLongitude(), vehicleData.getLatitudeDirection(), alertThreshold.getSeverity(),
                 null, LocalDateTime.now(), null, alertThreshold.getId());
         alertRepository.save(alert);
+    }
+
+    public Map<String, Double> getCriticalAlertPercentageByAlertType() {
+        // Define the aggregation pipeline
+        Aggregation aggregation = newAggregation(
+                group("alertType")
+                        .count().as("total")
+                        .sum(conditional(Criteria.where("severity").is("Critical"), 1, 0)).as("criticalCount"),
+                project("_id")
+                        .and("total").as("total")
+                        .and("criticalCount").as("criticalCount")
+                        .andExpression("criticalCount / total * 100").as("percentage")
+        );
+
+        // Execute the aggregation
+        AggregationResults<AlertPercentage> results = mongoTemplate.aggregate(aggregation, "alert", AlertPercentage.class);
+
+        // Prepare the result map with default values
+        Map<String, Double> result = new HashMap<>();
+
+        // Populate the map with the results
+        for (AlertPercentage alertPercentage : results.getMappedResults()) {
+            result.put(alertPercentage.getAlertType(), alertPercentage.getPercentage());
+        }
+
+        // Ensure all enum values are included, even if no data
+        for (AlertType type : AlertType.values()) {
+            result.putIfAbsent(type.name(), 0.0);
+        }
+
+        return result;
     }
 }

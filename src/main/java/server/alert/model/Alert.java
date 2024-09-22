@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 @JsonDeserialize(using = AlertDeserializer.class)
 public class Alert {
     @Id
-    private Long id;
+    private String id;
 
     @JsonProperty("alert_type")
     private String alertType;
@@ -41,10 +41,10 @@ public class Alert {
     @JsonProperty("additional_fields")
     private AdditionalFields additionalFields;
 
-    private String latitude;
+    private Double latitude;
     @JsonProperty("latitude_direction")
     private String latitudeDirection;
-    private String longitude;
+    private Double longitude;
     @JsonProperty("longitude_direction")
     private String longitudeDirection;
     private String severity;
